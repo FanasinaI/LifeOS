@@ -1,6 +1,6 @@
 import type { InferSelectModel } from 'drizzle-orm';
 
-import { indexContent, removeFromIndex } from '@/ai/rag';
+import { indexContent, removeFromIndex, searchLocal } from '@/ai/rag';
 import { notesRepository } from '@/database/repositories';
 import type { notes } from '@/database/schema/utilitaires';
 
@@ -13,11 +13,14 @@ export interface CreateNoteInput {
   category?: string | null;
 }
 
-/**
- * Notes minimales pour alimenter le RAG (§18/§15) — un écran de gestion complet (recherche
- * full-text UI, tags, catégories) arrive avec les Utilitaires (étape 8). Chaque écriture
- * réindexe le contenu pour la recherche locale.
- */
+export interface UpdateNoteInput {
+  title?: string;
+  content?: string;
+  tags?: string[];
+  category?: string | null;
+}
+
+/** Notes/Knowledge Base (§18) — chaque écriture réindexe le contenu pour la recherche locale (§15). */
 export async function createNote(input: CreateNoteInput): Promise<Note> {
   const now = new Date();
   const note = await notesRepository.insert({
@@ -28,22 +31,53 @@ export async function createNote(input: CreateNoteInput): Promise<Note> {
     createdAt: now,
     updatedAt: now,
   });
-  await indexContent('note', note.id, `${note.title}\n${note.content}`);
+  await reindex(note.id, note.title, note.content);
   return note;
 }
 
-export async function listNotes(limit = 50): Promise<Note[]> {
+export function getNote(noteId: number): Promise<Note | undefined> {
+  return notesRepository.findById(noteId);
+}
+
+export async function listNotes(limit = 200): Promise<Note[]> {
   const all = await notesRepository.findAll();
   return [...all].sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime()).slice(0, limit);
 }
 
-export async function updateNote(noteId: number, content: string): Promise<Note | undefined> {
-  const note = await notesRepository.update(noteId, { content, updatedAt: new Date() });
-  if (note) await indexContent('note', note.id, `${note.title}\n${note.content}`);
+export async function updateNote(noteId: number, input: UpdateNoteInput): Promise<Note | undefined> {
+  const note = await notesRepository.update(noteId, {
+    ...(input.title !== undefined ? { title: input.title } : {}),
+    ...(input.content !== undefined ? { content: input.content } : {}),
+    ...(input.tags !== undefined ? { tags: JSON.stringify(input.tags) } : {}),
+    ...(input.category !== undefined ? { category: input.category } : {}),
+    updatedAt: new Date(),
+  });
+  if (note) await reindex(note.id, note.title, note.content);
   return note;
 }
 
 export async function deleteNote(noteId: number): Promise<void> {
   await removeFromIndex('note', noteId);
   await notesRepository.remove(noteId);
+}
+
+/** Recherche full-text (§18) via l'index RAG déjà en place — pas de requête SQL LIKE dupliquée. */
+export async function searchNotes(query: string): Promise<Note[]> {
+  const results = await searchLocal(query, 50);
+  const noteIds = [...new Set(results.filter((r) => r.sourceType === 'note').map((r) => r.sourceId))];
+  const found = await Promise.all(noteIds.map((id) => notesRepository.findById(id)));
+  return found.filter((n): n is Note => n != null);
+}
+
+export function parseTags(note: Note): string[] {
+  if (!note.tags) return [];
+  try {
+    return JSON.parse(note.tags) as string[];
+  } catch {
+    return [];
+  }
+}
+
+function reindex(noteId: number, title: string, content: string): Promise<void> {
+  return indexContent('note', noteId, `${title}\n${content}`);
 }

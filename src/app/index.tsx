@@ -11,6 +11,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { listUnreadInsights, markInsightRead, type Insight } from '@/intelligence/insights';
 import { computeLifeScore } from '@/intelligence/life-score';
 import { runOodaCycle } from '@/intelligence/ooda';
+import { exportAllDataJson, exportTransactionsCsv, shareFile } from '@/modules/export';
 import { useAsyncData } from '@/utils/use-async-data';
 
 function severityColor(severity: Insight['severity'], theme: ReturnType<typeof useTheme>): ColorValue {
@@ -36,6 +37,7 @@ export default function DashboardScreen() {
     []
   );
   const [running, setRunning] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   async function handleRunCycle() {
     setRunning(true);
@@ -51,6 +53,24 @@ export default function DashboardScreen() {
   async function handleDismiss(insightId: number) {
     await markInsightRead(insightId);
     reloadInsights();
+  }
+
+  async function handleExportJson() {
+    setExporting(true);
+    try {
+      await shareFile(await exportAllDataJson());
+    } finally {
+      setExporting(false);
+    }
+  }
+
+  async function handleExportCsv() {
+    setExporting(true);
+    try {
+      await shareFile(await exportTransactionsCsv());
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -80,6 +100,11 @@ export default function DashboardScreen() {
               onPress={handleRunCycle}
               disabled={running}
             />
+
+            <ThemedView style={styles.exportRow}>
+              <PrimaryButton label="Exporter (JSON)" onPress={handleExportJson} disabled={exporting} />
+              <PrimaryButton label="Transactions (CSV)" onPress={handleExportCsv} disabled={exporting} />
+            </ThemedView>
 
             <ThemedText type="smallBold">Alertes</ThemedText>
           </ThemedView>
@@ -124,6 +149,10 @@ const styles = StyleSheet.create({
     padding: Spacing.four,
     borderRadius: Spacing.three,
     gap: Spacing.one,
+  },
+  exportRow: {
+    flexDirection: 'row',
+    gap: Spacing.two,
   },
   separator: {
     height: Spacing.two,

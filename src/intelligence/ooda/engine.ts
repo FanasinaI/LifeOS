@@ -4,6 +4,7 @@ import { oodaCyclesRepository } from '@/database/repositories';
 import type { oodaCycles } from '@/database/schema/intelligence';
 import { computeLifeScore, type LifeScoreResult } from '@/intelligence/life-score';
 import { generateInsights, type Insight } from '@/intelligence/insights';
+import { evaluateAutomationRules } from '@/modules/automation';
 import { listAccountsWithBalances } from '@/modules/finance';
 import { listPendingTasks } from '@/modules/tasks';
 
@@ -13,13 +14,14 @@ export interface OodaCycleResult {
   cycle: OodaCycle;
   lifeScore: LifeScoreResult;
   insights: Insight[];
+  automationsFired: number;
 }
 
 /**
  * §7 Boucle OODA : Observe → Orient → Decide → Act. Ce n'est pas un écran, c'est l'orchestrateur
  * qui enchaîne les moteurs déjà écrits (analytics/life-score dans Orient, rules dans Decide) et
- * journalise le cycle. ACT reste volontairement minimal ici : les insights générés sont la sortie
- * actionnable ; leur transformation en notifications réelles arrive à l'étape 8 (Utilitaires).
+ * journalise le cycle. ACT évalue les automatisations de l'utilisateur (§20) — leur vocabulaire
+ * d'actions (create_task/notify) exclut par construction toute opération financière irréversible.
  */
 export async function runOodaCycle(asOf: Date = new Date()): Promise<OodaCycleResult> {
   const startedAt = new Date();
@@ -37,9 +39,13 @@ export async function runOodaCycle(asOf: Date = new Date()): Promise<OodaCycleRe
   const insights = await generateInsights(asOf);
   const decision = insights.length > 0 ? `${insights.length} insight(s) à examiner.` : 'Rien à signaler.';
 
-  // ACT — pour l'instant, les insights persistés SONT l'action ; ACT complet (notifications,
-  // actions automatiques bornées) arrive avec les Automatisations (étape 8).
-  const action = insights.length > 0 ? 'Insights enregistrés pour revue utilisateur.' : null;
+  // ACT — insights persistés + notifiés, et automatisations utilisateur évaluées.
+  const automationResults = await evaluateAutomationRules();
+  const automationsFired = automationResults.filter((r) => r.fired).length;
+  const action =
+    insights.length > 0 || automationsFired > 0
+      ? `${insights.length} insight(s) notifié(s), ${automationsFired} automatisation(s) déclenchée(s).`
+      : null;
 
   const cycle = await oodaCyclesRepository.insert({
     startedAt,
@@ -52,7 +58,7 @@ export async function runOodaCycle(asOf: Date = new Date()): Promise<OodaCycleRe
     createdAt: new Date(),
   });
 
-  return { cycle, lifeScore, insights };
+  return { cycle, lifeScore, insights, automationsFired };
 }
 
 export function listRecentCycles(limit = 10): Promise<OodaCycle[]> {

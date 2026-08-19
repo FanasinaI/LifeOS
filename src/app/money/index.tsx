@@ -22,11 +22,15 @@ const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
   { value: 'custom', label: 'Autre' },
 ];
 
-const LINKS: { href: '/money/budgets' | '/money/debts' | '/money/receivables' | '/money/patrimoine'; label: string }[] = [
+const LINKS: {
+  href: '/money/budgets' | '/money/debts' | '/money/receivables' | '/money/patrimoine' | '/money/wishlist';
+  label: string;
+}[] = [
   { href: '/money/budgets', label: 'Budgets' },
   { href: '/money/debts', label: 'Dettes' },
   { href: '/money/receivables', label: 'Créances' },
   { href: '/money/patrimoine', label: 'Patrimoine' },
+  { href: '/money/wishlist', label: 'Wishlist' },
 ];
 
 export default function MoneyScreen() {

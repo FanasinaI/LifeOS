@@ -80,6 +80,7 @@ export default function LifeScreen() {
               <Chip label="Objectifs" selected={false} onPress={() => router.push('/life/goals')} />
               <Chip label="Calendrier" selected={false} onPress={() => router.push('/life/calendar')} />
               <Chip label="Time Tracking" selected={false} onPress={() => router.push('/life/time-tracking')} />
+              <Chip label="Notifications" selected={false} onPress={() => router.push('/life/notifications')} />
             </ChipRow>
 
             <ThemedText type="smallBold">Habitudes</ThemedText>

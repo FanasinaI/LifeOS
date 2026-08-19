@@ -9,6 +9,7 @@ export default function MoneyLayout() {
       <Stack.Screen name="debts" options={{ headerShown: true, title: 'Dettes' }} />
       <Stack.Screen name="receivables" options={{ headerShown: true, title: 'Créances' }} />
       <Stack.Screen name="patrimoine" options={{ headerShown: true, title: 'Patrimoine' }} />
+      <Stack.Screen name="wishlist" options={{ headerShown: true, title: 'Wishlist' }} />
     </Stack>
   );
 }

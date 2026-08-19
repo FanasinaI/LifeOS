@@ -2,6 +2,7 @@ import type { InferSelectModel } from 'drizzle-orm';
 
 import { transactionsRepository } from '@/database/repositories';
 import type { transactions } from '@/database/schema/finance';
+import { recordAudit } from '@/modules/audit';
 
 import { refreshAccountBalance } from './accounts.service';
 
@@ -40,6 +41,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
   });
 
   await syncAffectedBalances(transaction);
+  await recordAudit('create', 'transaction', transaction.id, null, transaction, input.source === 'manual' ? 'user' : 'system');
   return transaction;
 }
 
@@ -58,6 +60,7 @@ export async function deleteTransaction(transactionId: number): Promise<void> {
   if (!transaction) return;
   await transactionsRepository.remove(transactionId);
   await syncAffectedBalances(transaction);
+  await recordAudit('delete', 'transaction', transactionId, transaction, null, 'user');
 }
 
 export function listRecentTransactions(limit = 20): Promise<Transaction[]> {

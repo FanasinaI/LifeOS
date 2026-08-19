@@ -1,6 +1,7 @@
 import { getActiveAdapter } from '@/ai/runtime';
 import { searchLocal, type SearchResult } from '@/ai/rag';
 import { getTool, runTool } from '@/ai/tools';
+import { recordAudit } from '@/modules/audit';
 import { useAppStore } from '@/store';
 
 /**
@@ -22,6 +23,11 @@ export async function confirmPendingAction(): Promise<unknown> {
   if (!pending) throw new Error('Aucune action en attente de confirmation.');
   const result = await runTool(pending.toolName, pending.args);
   useAppStore.getState().setPendingAction(null);
+
+  const entity = pending.toolName.replace(/^create_/, '');
+  const entityId = result != null && typeof result === 'object' && 'id' in result ? Number(result.id) : null;
+  await recordAudit(pending.toolName, entity, entityId, null, result, 'ai');
+
   return result;
 }
 
