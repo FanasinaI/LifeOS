@@ -36,6 +36,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# Claude Code (local-only, not shared via the repo)
+.claude/
+CLAUDE.md
+
 example
 
 # generated native folders
