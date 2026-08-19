@@ -27,6 +27,11 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="money">
+        <NativeTabs.Trigger.Label>Argent</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="banknote" md="account_balance_wallet" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
