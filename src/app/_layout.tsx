@@ -5,16 +5,28 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { MigrationGate } from '@/database/migration-gate';
+import { useAutoLock } from '@/security/use-auto-lock';
 
 SplashScreen.preventAutoHideAsync();
+
+// Mounted only once MigrationGate confirms the DB is ready — useAutoLock reads the lock
+// timeout from `settings`, which needs the migrations to have run first.
+function AppShell() {
+  useAutoLock();
+  return (
+    <>
+      <AnimatedSplashOverlay />
+      <AppTabs />
+    </>
+  );
+}
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <MigrationGate>
-        <AnimatedSplashOverlay />
-        <AppTabs />
+        <AppShell />
       </MigrationGate>
     </ThemeProvider>
   );
