@@ -32,6 +32,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Argent</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="banknote" md="account_balance_wallet" />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="life">
+        <NativeTabs.Trigger.Label>Life</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="checklist" md="checklist" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

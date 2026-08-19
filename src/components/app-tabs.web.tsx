@@ -30,6 +30,9 @@ export default function AppTabs() {
           <TabTrigger name="money" href="/money" asChild>
             <TabButton>Argent</TabButton>
           </TabTrigger>
+          <TabTrigger name="life" href="/life" asChild>
+            <TabButton>Life</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>
