@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
 
+import { BootLoadingView } from '@/components/boot-loading-view';
 import { isOnboardingComplete } from '@/modules/onboarding';
 
 import { OnboardingFlow } from './onboarding-flow';
@@ -19,7 +20,7 @@ export function OnboardingGate({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  if (status === 'checking') return null;
+  if (status === 'checking') return <BootLoadingView />;
   if (status === 'needed') return <OnboardingFlow onDone={() => setStatus('done')} />;
   return <>{children}</>;
 }

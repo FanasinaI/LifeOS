@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { BootLoadingView } from '@/components/boot-loading-view';
 import { PrimaryButton, TextField } from '@/components/money/form-kit';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -35,7 +36,7 @@ export function LockGate({ children }: { children: ReactNode }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!checked) return null;
+  if (!checked) return <BootLoadingView />;
   if (!isLocked) return <>{children}</>;
   return <PinEntryScreen />;
 }

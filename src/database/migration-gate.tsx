@@ -1,7 +1,9 @@
 import { useMigrations } from 'drizzle-orm/expo-sqlite/migrator';
 import type { ReactNode } from 'react';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { BootLoadingView } from '@/components/boot-loading-view';
 
 import migrations from '../../drizzle/migrations';
 import { db, ensureSearchIndex } from './client';
@@ -34,11 +36,7 @@ export function MigrationGate({ children }: { children: ReactNode }) {
   }
 
   if (!success || !indexReady) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator />
-      </View>
-    );
+    return <BootLoadingView />;
   }
 
   return <>{children}</>;
