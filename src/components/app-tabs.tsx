@@ -42,6 +42,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Santé</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="heart" md="favorite" />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="ai">
+        <NativeTabs.Trigger.Label>IA</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="sparkles" md="auto_awesome" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
