@@ -33,6 +33,9 @@ export default function AppTabs() {
           <TabTrigger name="life" href="/life" asChild>
             <TabButton>Life</TabButton>
           </TabTrigger>
+          <TabTrigger name="health" href="/health" asChild>
+            <TabButton>Santé</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>

@@ -37,6 +37,11 @@ export default function AppTabs() {
         <NativeTabs.Trigger.Label>Life</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="checklist" md="checklist" />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="health">
+        <NativeTabs.Trigger.Label>Santé</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="heart" md="favorite" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }
