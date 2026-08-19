@@ -20,14 +20,6 @@ export default function AppTabs() {
         />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="explore">
-        <NativeTabs.Trigger.Label>Explore</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
-      </NativeTabs.Trigger>
-
       <NativeTabs.Trigger name="money">
         <NativeTabs.Trigger.Label>Argent</NativeTabs.Trigger.Label>
         <NativeTabs.Trigger.Icon sf="banknote" md="account_balance_wallet" />

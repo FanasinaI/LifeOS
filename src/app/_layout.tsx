@@ -5,12 +5,14 @@ import { useColorScheme } from 'react-native';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { MigrationGate } from '@/database/migration-gate';
+import { OnboardingGate } from '@/onboarding/onboarding-gate';
+import { LockGate } from '@/security/lock-gate';
 import { useAutoLock } from '@/security/use-auto-lock';
 
 SplashScreen.preventAutoHideAsync();
 
-// Mounted only once MigrationGate confirms the DB is ready — useAutoLock reads the lock
-// timeout from `settings`, which needs the migrations to have run first.
+// Mounted only once MigrationGate/OnboardingGate/LockGate all clear — useAutoLock reads the
+// lock timeout from `settings`, which needs the migrations to have run first.
 function AppShell() {
   useAutoLock();
   return (
@@ -26,7 +28,11 @@ export default function TabLayout() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <MigrationGate>
-        <AppShell />
+        <OnboardingGate>
+          <LockGate>
+            <AppShell />
+          </LockGate>
+        </OnboardingGate>
       </MigrationGate>
     </ThemeProvider>
   );
