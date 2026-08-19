@@ -1,98 +1,131 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { FlatList, Pressable, StyleSheet, type ColorValue } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
+import { PrimaryButton } from '@/components/money/form-kit';
+import { SummaryRow } from '@/components/money/summary-row';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { listUnreadInsights, markInsightRead, type Insight } from '@/intelligence/insights';
+import { computeLifeScore } from '@/intelligence/life-score';
+import { runOodaCycle } from '@/intelligence/ooda';
+import { useAsyncData } from '@/utils/use-async-data';
 
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
+function severityColor(severity: Insight['severity'], theme: ReturnType<typeof useTheme>): ColorValue {
+  switch (severity) {
+    case 'critique':
+      return theme.danger;
+    case 'important':
+    case 'attention':
+      return theme.warning;
+    default:
+      return theme.textSecondary;
   }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
 }
 
-export default function HomeScreen() {
+export default function DashboardScreen() {
+  const theme = useTheme();
+  const { data: lifeScore, loading: scoreLoading, reload: reloadScore } = useAsyncData(
+    () => computeLifeScore(),
+    []
+  );
+  const { data: insights, loading: insightsLoading, reload: reloadInsights } = useAsyncData(
+    () => listUnreadInsights(),
+    []
+  );
+  const [running, setRunning] = useState(false);
+
+  async function handleRunCycle() {
+    setRunning(true);
+    try {
+      await runOodaCycle();
+      reloadScore();
+      reloadInsights();
+    } finally {
+      setRunning(false);
+    }
+  }
+
+  async function handleDismiss(insightId: number) {
+    await markInsightRead(insightId);
+    reloadInsights();
+  }
+
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <FlatList
+        data={insights ?? []}
+        keyExtractor={(item) => String(item.id)}
+        contentContainerStyle={styles.list}
+        ListHeaderComponent={
+          <ThemedView style={styles.header}>
+            <ThemedText type="title">LifeOS</ThemedText>
 
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
+            <ThemedView type="backgroundElement" style={styles.scoreCard}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Life Score
+              </ThemedText>
+              <ThemedText type="title">{scoreLoading ? '…' : lifeScore?.score}</ThemedText>
+              {(lifeScore?.components ?? []).map((c) => (
+                <ThemedText key={c.key} type="small" themeColor="textSecondary">
+                  {c.label} : {Math.round(c.value)} — {c.explanation}
+                </ThemedText>
+              ))}
+            </ThemedView>
 
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
+            <PrimaryButton
+              label={running ? 'Analyse en cours…' : 'Lancer un cycle OODA'}
+              onPress={handleRunCycle}
+              disabled={running}
+            />
 
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+            <ThemedText type="smallBold">Alertes</ThemedText>
+          </ThemedView>
+        }
+        renderItem={({ item }) => (
+          <Pressable onPress={() => handleDismiss(item.id)}>
+            <SummaryRow
+              title={item.title}
+              subtitle={item.message}
+              value={item.severity}
+              valueColor={severityColor(item.severity, theme)}
+            />
+          </Pressable>
+        )}
+        ItemSeparatorComponent={() => <ThemedView style={styles.separator} />}
+        ListEmptyComponent={
+          !insightsLoading ? (
+            <ThemedText themeColor="textSecondary">
+              Aucune alerte — lance un cycle OODA pour analyser ta situation.
+            </ThemedText>
+          ) : null
+        }
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
   safeArea: {
     flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
+  },
+  list: {
+    padding: Spacing.three,
+    paddingBottom: BottomTabInset + Spacing.four,
+    gap: Spacing.two,
+  },
+  header: {
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
+    marginBottom: Spacing.three,
   },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
+  scoreCard: {
+    padding: Spacing.four,
+    borderRadius: Spacing.three,
+    gap: Spacing.one,
   },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
+  separator: {
+    height: Spacing.two,
   },
 });
